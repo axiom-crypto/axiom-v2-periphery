@@ -103,11 +103,7 @@ contract AxiomVm is Test {
     ) public returns (AxiomSendQueryArgs memory args) {
         _prove(circuitPath, inputPath, urlOrAlias, sourceChainId);
         string memory _queryString = _queryParams(urlOrAlias, callback, callbackExtraData, sourceChainId, feeData);
-        bytes memory calldataBytes = abi.decode(vm.parseJson(_queryString, ".calldata"), (bytes));
-
-        // use of `this` is necessary to convert memory to calldata and allow slicing
-        args = this._parseSendQueryArgs(calldataBytes);
-        args.value = vm.parseJsonUint(queryString, ".value");
+        args = _parseSendQueryArgs(_queryString);
     }
 
     /**
@@ -135,8 +131,7 @@ contract AxiomVm is Test {
         string memory _outputString = _prove(circuitPath, inputPath, urlOrAlias, sourceChainId);
         string memory _queryString = _queryParams(urlOrAlias, callback, callbackExtraData, sourceChainId, feeData);
 
-        AxiomSendQueryArgs memory _sendQueryArgs =
-            this._parseSendQueryArgs(abi.decode(vm.parseJson(_queryString, ".calldata"), (bytes)));
+        AxiomSendQueryArgs memory _sendQueryArgs = _parseSendQueryArgs(_queryString);
         args = AxiomFulfillCallbackArgs({
             sourceChainId: sourceChainId,
             caller: caller,
@@ -276,7 +271,7 @@ contract AxiomVm is Test {
         string[] memory axiomCheck = new string[](3);
         axiomCheck[0] = "sh";
         axiomCheck[1] = "-c";
-        axiomCheck[2] = "npm list @axiom-crypto/client@0.2.0-rc2.0 >/dev/null 2>&1 && echo 1 || echo 0";
+        axiomCheck[2] = "npm list @axiom-crypto/client@0.2.2-rc2.0 >/dev/null 2>&1 && echo 1 || echo 0";
         bytes memory axiomOutput = vm.ffi(axiomCheck);
         require(_parseBoolean(string(axiomOutput)), "Axiom client not installed");
     }
@@ -342,7 +337,7 @@ contract AxiomVm is Test {
         cli[18] = OUTPUT_PATH;
         cli[19] = "--outputs";
         cli[20] = QUERY_PATH;
-        cli[21] = "--calldata";
+        cli[21] = "--args-map";
         vm.ffi(cli);
         output = vm.readFile(QUERY_PATH);
         queryString = output;
@@ -350,42 +345,28 @@ contract AxiomVm is Test {
 
     /**
      * @dev Parses AxiomSendQueryArgs from the CLI calldata bytes output
-     * @param calldataBytes the calldata bytes output from the CLI
+     * @param _queryString the string output from the CLI
      * @return args the AxiomSendQueryArgs
      */
-    function _parseSendQueryArgs(bytes calldata calldataBytes) public pure returns (AxiomSendQueryArgs memory args) {
-        (
-            uint64 sourceChainId,
-            bytes32 dataQueryHash,
-            IAxiomV2Query.AxiomV2ComputeQuery memory computeQuery,
-            IAxiomV2Query.AxiomV2Callback memory callback,
-            IAxiomV2Query.AxiomV2FeeData memory feeData,
-            bytes32 userSalt,
-            address refundee,
-            bytes memory dataQuery
-        ) = abi.decode(
-            calldataBytes[4:],
-            (
-                uint64,
-                bytes32,
-                IAxiomV2Query.AxiomV2ComputeQuery,
-                IAxiomV2Query.AxiomV2Callback,
-                IAxiomV2Query.AxiomV2FeeData,
-                bytes32,
-                address,
-                bytes
-            )
-        );
-        args = AxiomSendQueryArgs({
-            sourceChainId: sourceChainId,
-            dataQueryHash: dataQueryHash,
-            computeQuery: computeQuery,
-            callback: callback,
-            feeData: feeData,
-            userSalt: userSalt,
-            refundee: refundee,
-            dataQuery: dataQuery,
-            value: 0
-        });
+    function _parseSendQueryArgs(string memory _queryString) internal pure returns (AxiomSendQueryArgs memory args) {
+        args.sourceChainId = uint64(vm.parseJsonUint(_queryString, ".args.sourceChainId"));
+        args.dataQueryHash = vm.parseJsonBytes32(_queryString, ".args.dataQueryHash");
+
+        args.computeQuery.k = uint8(vm.parseJsonUint(_queryString, ".args.computeQuery.k"));
+        args.computeQuery.resultLen = uint16(vm.parseJsonUint(_queryString, ".args.computeQuery.resultLen"));
+        args.computeQuery.vkey = vm.parseJsonBytes32Array(_queryString, ".args.computeQuery.vkey");
+        args.computeQuery.computeProof = vm.parseJsonBytes(_queryString, ".args.computeQuery.computeProof");
+
+        args.callback.target = vm.parseJsonAddress(_queryString, ".args.callback.target");
+        args.callback.extraData = vm.parseJsonBytes(_queryString, ".args.callback.extraData");
+
+        args.feeData.maxFeePerGas = uint64(vm.parseJsonUint(_queryString, ".args.feeData.maxFeePerGas"));
+        args.feeData.callbackGasLimit = uint32(vm.parseJsonUint(_queryString, ".args.feeData.callbackGasLimit"));
+        args.feeData.overrideAxiomQueryFee = vm.parseJsonUint(_queryString, ".args.feeData.overrideAxiomQueryFee");
+
+        args.userSalt = vm.parseJsonBytes32(_queryString, ".args.userSalt");
+        args.refundee = vm.parseJsonAddress(_queryString, ".args.refundee");
+        args.dataQuery = vm.parseJsonBytes(_queryString, ".args.dataQuery");
+        args.value = vm.parseJsonUint(_queryString, ".value");
     }
 }
