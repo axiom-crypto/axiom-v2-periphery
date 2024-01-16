@@ -10,12 +10,11 @@ contract AverageBalanceTest is AxiomTest {
     AverageBalance public averageBalance;
 
     function setUp() public {
-        urlOrAlias = "sepolia";
-        _createSelectForkAndSetupAxiom(urlOrAlias, 5_057_320);
+        _createSelectForkAndSetupAxiom("sepolia", 5_057_320);
 
         circuitPath = "test/circuit/average.circuit.ts";
         inputPath = "test/circuit/input.json";
-        querySchema = axiomVm.compile(circuitPath, inputPath, urlOrAlias);
+        querySchema = axiomVm.compile(circuitPath, inputPath);
         averageBalance = new AverageBalance(axiomV2QueryAddress, uint64(block.chainid), querySchema);
     }
 
@@ -23,7 +22,6 @@ contract AverageBalanceTest is AxiomTest {
         axiomVm.getArgsAndSendQuery(
             circuitPath,
             inputPath,
-            urlOrAlias,
             address(averageBalance),
             callbackExtraData,
             feeData,
@@ -33,7 +31,7 @@ contract AverageBalanceTest is AxiomTest {
 
     function test_axiomSendQueryWithArgs() public {
         AxiomVm.AxiomSendQueryArgs memory args = axiomVm.sendQueryArgs(
-            circuitPath, inputPath, urlOrAlias, address(averageBalance), callbackExtraData, feeData
+            circuitPath, inputPath, address(averageBalance), callbackExtraData, feeData
         );
         axiomV2Query.sendQuery{ value: args.value }(
             args.sourceChainId,
@@ -51,7 +49,6 @@ contract AverageBalanceTest is AxiomTest {
         axiomVm.prankCallback(
             circuitPath,
             inputPath,
-            urlOrAlias,
             address(averageBalance),
             callbackExtraData,
             feeData,
@@ -63,7 +60,6 @@ contract AverageBalanceTest is AxiomTest {
         AxiomVm.AxiomFulfillCallbackArgs memory args = axiomVm.fulfillCallbackArgs(
             circuitPath,
             inputPath,
-            urlOrAlias,
             address(averageBalance),
             callbackExtraData,
             feeData,
@@ -76,7 +72,6 @@ contract AverageBalanceTest is AxiomTest {
         axiomVm.prankOffchainCallback(
             circuitPath,
             inputPath,
-            urlOrAlias,
             address(averageBalance),
             callbackExtraData,
             feeData,
@@ -88,7 +83,6 @@ contract AverageBalanceTest is AxiomTest {
         AxiomVm.AxiomFulfillCallbackArgs memory args = axiomVm.fulfillCallbackArgs(
             circuitPath,
             inputPath,
-            urlOrAlias,
             address(averageBalance),
             callbackExtraData,
             feeData,

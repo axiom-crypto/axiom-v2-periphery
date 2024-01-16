@@ -19,7 +19,6 @@ abstract contract AxiomTest is Test {
 
     string public circuitPath;
     string public inputPath;
-    string public urlOrAlias;
 
     bytes32 public querySchema;
     bytes public callbackExtraData;
@@ -37,8 +36,8 @@ abstract contract AxiomTest is Test {
         callbackExtraData = bytes("");
     }
 
-    function _createSelectForkAndSetupAxiom(string memory _urlOrAlias, uint256 forkBlock) internal {
-        vm.createSelectFork(_urlOrAlias, forkBlock);
+    function _createSelectForkAndSetupAxiom(string memory urlOrAlias, uint256 forkBlock) internal {
+        vm.createSelectFork(urlOrAlias, forkBlock);
         uint64 chainId = uint64(block.chainid);
 
         axiomV2CoreAddress = AxiomV2Addresses.axiomV2CoreAddress(chainId);
@@ -50,6 +49,6 @@ abstract contract AxiomTest is Test {
         vm.makePersistent(axiomV2CoreAddress);
         vm.makePersistent(axiomV2QueryAddress);
 
-        axiomVm = new AxiomVm(axiomV2QueryAddress);
+        axiomVm = new AxiomVm(axiomV2QueryAddress, urlOrAlias);
     }
 }

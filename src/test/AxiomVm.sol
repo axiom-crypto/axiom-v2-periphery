@@ -24,10 +24,13 @@ contract AxiomVm is Test {
     string private constant CLI_VERSION_CHECK_CMD = string(abi.encodePacked("npm list @axiom-crypto/client | grep -q '@axiom-crypto/client@", CLI_VERSION, "' && echo 1 || echo 0"));
     string private constant CLI_VERSION_ERROR = string(abi.encodePacked("Axiom client v", CLI_VERSION, ".x not installed"));
 
+    string urlOrAlias;
+
     address public axiomV2QueryAddress;
 
-    constructor(address _axiomV2QueryAddress) {
+    constructor(address _axiomV2QueryAddress, string memory _urlOrAlias) {
         axiomV2QueryAddress = _axiomV2QueryAddress;
+        urlOrAlias = _urlOrAlias;
     }
 
     struct AxiomSendQueryArgs {
@@ -57,10 +60,9 @@ contract AxiomVm is Test {
      * @dev Compiles a circuit using the Axiom CLI via FFI
      * @param circuitPath path to the circuit file
      * @param inputPath path to the input file
-     * @param urlOrAlias URL or alias of the provider
      * @return querySchema
      */
-    function compile(string memory circuitPath, string memory inputPath, string memory urlOrAlias)
+    function compile(string memory circuitPath, string memory inputPath)
         public
         returns (bytes32 querySchema)
     {
@@ -91,7 +93,6 @@ contract AxiomVm is Test {
      * @dev Generates args for the sendQuery function
      * @param circuitPath path to the circuit file
      * @param inputPath path to the input file
-     * @param urlOrAlias the URL or alias of the RPC provider
      * @param callback the callback contract address
      * @param callbackExtraData extra data to be passed to the callback contract
      * @param feeData the fee data
@@ -100,14 +101,12 @@ contract AxiomVm is Test {
     function sendQueryArgs(
         string memory circuitPath,
         string memory inputPath,
-        string memory urlOrAlias,
         address callback,
         bytes memory callbackExtraData,
         IAxiomV2Query.AxiomV2FeeData memory feeData
     ) public returns (AxiomSendQueryArgs memory args) {
-        uint64 sourceChainId = uint64(block.chainid);
-        _prove(circuitPath, inputPath, urlOrAlias, sourceChainId);
-        string memory _queryString = _queryParams(urlOrAlias, callback, callbackExtraData, feeData);
+        _prove(circuitPath, inputPath);
+        string memory _queryString = _queryParams(callback, callbackExtraData, feeData);
         args = _parseSendQueryArgs(_queryString);
     }
 
@@ -115,7 +114,6 @@ contract AxiomVm is Test {
      * @dev Generates arguments for the fulfillCallback function
      * @param circuitPath path to the circuit file
      * @param inputPath path to the input file
-     * @param urlOrAlias the URL or alias of the RPC provider
      * @param callback the callback contract address
      * @param callbackExtraData extra data to be passed to the callback contract
      * @param feeData the fee data
@@ -125,15 +123,14 @@ contract AxiomVm is Test {
     function fulfillCallbackArgs(
         string memory circuitPath,
         string memory inputPath,
-        string memory urlOrAlias,
         address callback,
         bytes memory callbackExtraData,
         IAxiomV2Query.AxiomV2FeeData memory feeData,
         address caller
     ) public returns (AxiomFulfillCallbackArgs memory args) {
         uint64 sourceChainId = uint64(block.chainid);
-        string memory _outputString = _prove(circuitPath, inputPath, urlOrAlias, sourceChainId);
-        string memory _queryString = _queryParams(urlOrAlias, callback, callbackExtraData, feeData);
+        string memory _outputString = _prove(circuitPath, inputPath);
+        string memory _queryString = _queryParams(callback, callbackExtraData, feeData);
 
         AxiomSendQueryArgs memory _sendQueryArgs = _parseSendQueryArgs(_queryString);
         args = AxiomFulfillCallbackArgs({
@@ -163,7 +160,6 @@ contract AxiomVm is Test {
      * @dev Generates the fulfill callback args and and fulfills the onchain query
      * @param circuitPath path to the circuit file
      * @param inputPath path to the input file
-     * @param urlOrAlias the URL or alias of the RPC provider
      * @param callback the callback contract address
      * @param callbackExtraData extra data to be passed to the callback contract
      * @param feeData the fee data
@@ -172,14 +168,13 @@ contract AxiomVm is Test {
     function prankCallback(
         string memory circuitPath,
         string memory inputPath,
-        string memory urlOrAlias,
         address callback,
         bytes memory callbackExtraData,
         IAxiomV2Query.AxiomV2FeeData memory feeData,
         address caller
     ) public {
         AxiomFulfillCallbackArgs memory args = fulfillCallbackArgs(
-            circuitPath, inputPath, urlOrAlias, callback, callbackExtraData, feeData, caller
+            circuitPath, inputPath, callback, callbackExtraData, feeData, caller
         );
         prankCallback(args);
     }
@@ -199,7 +194,6 @@ contract AxiomVm is Test {
      * @dev Generates the fulfill callback args and fulfills the offchain query
      * @param circuitPath path to the circuit file
      * @param inputPath path to the input file
-     * @param urlOrAlias the URL or alias of the RPC provider
      * @param callback the callback contract address
      * @param callbackExtraData extra data to be passed to the callback contract
      * @param feeData the fee data
@@ -208,14 +202,13 @@ contract AxiomVm is Test {
     function prankOffchainCallback(
         string memory circuitPath,
         string memory inputPath,
-        string memory urlOrAlias,
         address callback,
         bytes memory callbackExtraData,
         IAxiomV2Query.AxiomV2FeeData memory feeData,
         address caller
     ) public {
         AxiomFulfillCallbackArgs memory args = fulfillCallbackArgs(
-            circuitPath, inputPath, urlOrAlias, callback, callbackExtraData, feeData, caller
+            circuitPath, inputPath, callback, callbackExtraData, feeData, caller
         );
         prankOffchainCallback(args);
     }
@@ -224,7 +217,6 @@ contract AxiomVm is Test {
      * @dev Generates sendQueryArgs and sends a query to the AxiomV2Query contract.
      * @param circuitPath path to the circuit file
      * @param inputPath path to the input file
-     * @param urlOrAlias the URL or alias of the RPC provider
      * @param callback the callback contract address
      * @param callbackExtraData extra data to be passed to the callback contract
      * @param feeData the fee data
@@ -233,14 +225,13 @@ contract AxiomVm is Test {
     function getArgsAndSendQuery(
         string memory circuitPath,
         string memory inputPath,
-        string memory urlOrAlias,
         address callback,
         bytes memory callbackExtraData,
         IAxiomV2Query.AxiomV2FeeData memory feeData,
         address caller
     ) public {
         AxiomVm.AxiomSendQueryArgs memory args =
-            sendQueryArgs(circuitPath, inputPath, urlOrAlias, callback, callbackExtraData, feeData);
+            sendQueryArgs(circuitPath, inputPath, callback, callbackExtraData, feeData);
         vm.prank(caller);
         IAxiomV2Query(axiomV2QueryAddress).sendQuery{ value: args.value }(
             args.sourceChainId,
@@ -274,7 +265,7 @@ contract AxiomVm is Test {
         require(_parseBoolean(string(axiomOutput)), CLI_VERSION_ERROR);
     }
 
-    function _prove(string memory circuitPath, string memory inputPath, string memory urlOrAlias, uint64 sourceChainId)
+    function _prove(string memory circuitPath, string memory inputPath)
         internal
         returns (string memory output)
     {
@@ -288,7 +279,7 @@ contract AxiomVm is Test {
         cli[4] = circuitPath;
         cli[5] = "--mock";
         cli[6] = "--sourceChainId";
-        cli[7] = vm.toString(sourceChainId);
+        cli[7] = vm.toString(block.chainid);
         cli[8] = "--compiled";
         cli[9] = COMPILED_PATH;
         cli[10] = "--provider";
@@ -305,7 +296,6 @@ contract AxiomVm is Test {
     }
 
     function _queryParams(
-        string memory urlOrAlias,
         address callback,
         bytes memory callbackExtraData,
         IAxiomV2Query.AxiomV2FeeData memory feeData
