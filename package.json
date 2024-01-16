@@ -4,8 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "compile": "npx axiom circuit compile test/circuit/average.circuit.ts --provider https://eth-sepolia.g.alchemy.com/v2/zokFUmKculbVkaHOTIyblk-PZ1EkaCs6 --inputs test/circuit/input.json --outputs .axiom/compiled.json --function circuit"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "Intrinsic Technologies",
