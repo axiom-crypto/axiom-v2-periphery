@@ -4,13 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "compile": "npx axiom circuit compile test/circuit/average.circuit.ts --provider https://eth-sepolia.g.alchemy.com/v2/zokFUmKculbVkaHOTIyblk-PZ1EkaCs6 --inputs test/circuit/input.json --outputs .axiom/compiled.json --function circuit"
   },
   "keywords": [],
   "author": "Intrinsic Technologies",
   "license": "MIT",
   "dependencies": {
-    "@axiom-crypto/client": "0.2.2-rc2.1",
+    "@axiom-crypto/client": "0.2.2-rc2.2-alpha.1",
     "dotenv": "^16.3.1"
   },
   "devDependencies": {

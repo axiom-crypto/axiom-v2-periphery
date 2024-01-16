@@ -60,7 +60,7 @@ contract AxiomVm is Test {
         returns (bytes32 querySchema)
     {
         _validateAxiomSetup();
-        string[] memory cli = new string[](13);
+        string[] memory cli = new string[](14);
         cli[0] = "npx";
         cli[1] = "axiom";
         cli[2] = "circuit";
@@ -74,6 +74,7 @@ contract AxiomVm is Test {
         cli[10] = COMPILED_PATH;
         cli[11] = "--function";
         cli[12] = "circuit";
+        cli[13] = "--mock";
         vm.ffi(cli);
 
         string memory artifact = vm.readFile(COMPILED_PATH);
