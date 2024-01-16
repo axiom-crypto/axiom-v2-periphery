@@ -271,9 +271,9 @@ contract AxiomVm is Test {
         string[] memory axiomCheck = new string[](3);
         axiomCheck[0] = "sh";
         axiomCheck[1] = "-c";
-        axiomCheck[2] = "npm list @axiom-crypto/client@0.2.2-rc2.1 >/dev/null 2>&1 && echo 1 || echo 0";
+        axiomCheck[2] = "npm list @axiom-crypto/client | grep -q '@axiom-crypto/client@0.2' && echo 1 || echo 0";
         bytes memory axiomOutput = vm.ffi(axiomCheck);
-        require(_parseBoolean(string(axiomOutput)), "Axiom client not installed");
+        require(_parseBoolean(string(axiomOutput)), "Axiom client v0.2.x not installed");
     }
 
     function _prove(string memory circuitPath, string memory inputPath, string memory urlOrAlias, uint64 sourceChainId)
