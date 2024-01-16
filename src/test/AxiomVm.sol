@@ -19,6 +19,11 @@ contract AxiomVm is Test {
     string public queryString;
     string public outputString;
 
+    /// @dev Axiom CLI version to use
+    string constant CLI_VERSION = "0.2";
+    string private constant CLI_VERSION_CHECK_CMD = string(abi.encodePacked("npm list @axiom-crypto/client | grep -q '@axiom-crypto/client@", CLI_VERSION, "' && echo 1 || echo 0"));
+    string private constant CLI_VERSION_ERROR = string(abi.encodePacked("Axiom client v", CLI_VERSION, ".x not installed"));
+
     address public axiomV2QueryAddress;
 
     constructor(address _axiomV2QueryAddress) {
@@ -89,7 +94,6 @@ contract AxiomVm is Test {
      * @param urlOrAlias the URL or alias of the RPC provider
      * @param callback the callback contract address
      * @param callbackExtraData extra data to be passed to the callback contract
-     * @param sourceChainId the source chain ID
      * @param feeData the fee data
      * @return args the sendQuery args
      */
@@ -99,11 +103,11 @@ contract AxiomVm is Test {
         string memory urlOrAlias,
         address callback,
         bytes memory callbackExtraData,
-        uint64 sourceChainId,
         IAxiomV2Query.AxiomV2FeeData memory feeData
     ) public returns (AxiomSendQueryArgs memory args) {
+        uint64 sourceChainId = uint64(block.chainid);
         _prove(circuitPath, inputPath, urlOrAlias, sourceChainId);
-        string memory _queryString = _queryParams(urlOrAlias, callback, callbackExtraData, sourceChainId, feeData);
+        string memory _queryString = _queryParams(urlOrAlias, callback, callbackExtraData, feeData);
         args = _parseSendQueryArgs(_queryString);
     }
 
@@ -114,7 +118,6 @@ contract AxiomVm is Test {
      * @param urlOrAlias the URL or alias of the RPC provider
      * @param callback the callback contract address
      * @param callbackExtraData extra data to be passed to the callback contract
-     * @param sourceChainId the source chain ID
      * @param feeData the fee data
      * @param caller the address of the caller
      * @return args the fulfillCallback args
@@ -125,12 +128,12 @@ contract AxiomVm is Test {
         string memory urlOrAlias,
         address callback,
         bytes memory callbackExtraData,
-        uint64 sourceChainId,
         IAxiomV2Query.AxiomV2FeeData memory feeData,
         address caller
     ) public returns (AxiomFulfillCallbackArgs memory args) {
+        uint64 sourceChainId = uint64(block.chainid);
         string memory _outputString = _prove(circuitPath, inputPath, urlOrAlias, sourceChainId);
-        string memory _queryString = _queryParams(urlOrAlias, callback, callbackExtraData, sourceChainId, feeData);
+        string memory _queryString = _queryParams(urlOrAlias, callback, callbackExtraData, feeData);
 
         AxiomSendQueryArgs memory _sendQueryArgs = _parseSendQueryArgs(_queryString);
         args = AxiomFulfillCallbackArgs({
@@ -163,7 +166,6 @@ contract AxiomVm is Test {
      * @param urlOrAlias the URL or alias of the RPC provider
      * @param callback the callback contract address
      * @param callbackExtraData extra data to be passed to the callback contract
-     * @param sourceChainId the source chain ID
      * @param feeData the fee data
      * @param caller the address of the caller
      */
@@ -173,12 +175,11 @@ contract AxiomVm is Test {
         string memory urlOrAlias,
         address callback,
         bytes memory callbackExtraData,
-        uint64 sourceChainId,
         IAxiomV2Query.AxiomV2FeeData memory feeData,
         address caller
     ) public {
         AxiomFulfillCallbackArgs memory args = fulfillCallbackArgs(
-            circuitPath, inputPath, urlOrAlias, callback, callbackExtraData, sourceChainId, feeData, caller
+            circuitPath, inputPath, urlOrAlias, callback, callbackExtraData, feeData, caller
         );
         prankCallback(args);
     }
@@ -201,7 +202,6 @@ contract AxiomVm is Test {
      * @param urlOrAlias the URL or alias of the RPC provider
      * @param callback the callback contract address
      * @param callbackExtraData extra data to be passed to the callback contract
-     * @param sourceChainId the source chain ID
      * @param feeData the fee data
      * @param caller the address of the caller
      */
@@ -211,12 +211,11 @@ contract AxiomVm is Test {
         string memory urlOrAlias,
         address callback,
         bytes memory callbackExtraData,
-        uint64 sourceChainId,
         IAxiomV2Query.AxiomV2FeeData memory feeData,
         address caller
     ) public {
         AxiomFulfillCallbackArgs memory args = fulfillCallbackArgs(
-            circuitPath, inputPath, urlOrAlias, callback, callbackExtraData, sourceChainId, feeData, caller
+            circuitPath, inputPath, urlOrAlias, callback, callbackExtraData, feeData, caller
         );
         prankOffchainCallback(args);
     }
@@ -228,7 +227,6 @@ contract AxiomVm is Test {
      * @param urlOrAlias the URL or alias of the RPC provider
      * @param callback the callback contract address
      * @param callbackExtraData extra data to be passed to the callback contract
-     * @param sourceChainId the source chain ID
      * @param feeData the fee data
      * @param caller the address of the caller
      */
@@ -238,12 +236,11 @@ contract AxiomVm is Test {
         string memory urlOrAlias,
         address callback,
         bytes memory callbackExtraData,
-        uint64 sourceChainId,
         IAxiomV2Query.AxiomV2FeeData memory feeData,
         address caller
     ) public {
         AxiomVm.AxiomSendQueryArgs memory args =
-            sendQueryArgs(circuitPath, inputPath, urlOrAlias, callback, callbackExtraData, sourceChainId, feeData);
+            sendQueryArgs(circuitPath, inputPath, urlOrAlias, callback, callbackExtraData, feeData);
         vm.prank(caller);
         IAxiomV2Query(axiomV2QueryAddress).sendQuery{ value: args.value }(
             args.sourceChainId,
@@ -272,9 +269,9 @@ contract AxiomVm is Test {
         string[] memory axiomCheck = new string[](3);
         axiomCheck[0] = "sh";
         axiomCheck[1] = "-c";
-        axiomCheck[2] = "npm list @axiom-crypto/client | grep -q '@axiom-crypto/client@0.2' && echo 1 || echo 0";
+        axiomCheck[2] = CLI_VERSION_CHECK_CMD;
         bytes memory axiomOutput = vm.ffi(axiomCheck);
-        require(_parseBoolean(string(axiomOutput)), "Axiom client v0.2.x not installed");
+        require(_parseBoolean(string(axiomOutput)), CLI_VERSION_ERROR);
     }
 
     function _prove(string memory circuitPath, string memory inputPath, string memory urlOrAlias, uint64 sourceChainId)
@@ -311,7 +308,6 @@ contract AxiomVm is Test {
         string memory urlOrAlias,
         address callback,
         bytes memory callbackExtraData,
-        uint64 sourceChainId,
         IAxiomV2Query.AxiomV2FeeData memory feeData
     ) internal returns (string memory output) {
         _validateAxiomSetup();
@@ -323,7 +319,7 @@ contract AxiomVm is Test {
         cli[3] = "query-params";
         cli[4] = vm.toString(callback); // the callback target address
         cli[5] = "--sourceChainId";
-        cli[6] = vm.toString(sourceChainId);
+        cli[6] = vm.toString(block.chainid);
         cli[7] = "--refundAddress";
         cli[8] = vm.toString(msg.sender);
         cli[9] = "--callbackExtraData";
