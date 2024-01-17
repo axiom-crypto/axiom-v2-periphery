@@ -37,6 +37,7 @@ contract AxiomVm is Test {
         );
 
     string urlOrAlias;
+    bool compiled;
 
     address public axiomV2QueryAddress;
 
@@ -68,10 +69,6 @@ contract AxiomVm is Test {
         address callbackAddress;
     }
 
-    function _isStringEmpty(string memory str) internal pure returns (bool) {
-        return bytes(str).length == 0;
-    }
-
     /**
      * @dev Compiles a circuit using the Axiom CLI via FFI
      * @param _circuitPath path to the circuit file
@@ -83,6 +80,7 @@ contract AxiomVm is Test {
         string memory inputPath
     ) public returns (bytes32 querySchema) {
         circuitPath = _circuitPath;
+        compiled = true;
         _validateAxiomSetup();
         string[] memory cli = new string[](14);
         cli[0] = "npx";
@@ -320,6 +318,10 @@ contract AxiomVm is Test {
         string memory inputPath
     ) internal returns (string memory output) {
         _validateAxiomSetup();
+        require(
+            compiled,
+            "Circuit has not been compiled. Run `compile` first."
+        );
         vm.writeFile(COMPILED_PATH, compiledString);
         string[] memory cli = new string[](18);
         cli[0] = "npx";
