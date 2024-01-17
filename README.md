@@ -65,12 +65,12 @@ contract AverageBalance is AxiomV2Client {
 
 #### Testing with `AxiomTest` Foundry tests
 
-To test your code, you can use `AxiomTest.sol` in place of `forge-std/Test.sol`. This extension to the standard Foundry test library provides Axiom-specific cheatcodes accessible to your Foundry tests. Using these cheatcodes requires the Axiom Client SDK, which is provided via the npm package `@axiom-crypto/client@0.2.0-rc2.0`; you can install this in your Foundry project using
+To test your code, you can use `AxiomTest.sol` in place of `forge-std/Test.sol`. This extension to the standard Foundry test library provides Axiom-specific cheatcodes accessible to your Foundry tests. Using these cheatcodes requires the Axiom Client SDK, which is provided via the npm package `@axiom-crypto/client@0.2.2-rc2.2-alpha.1`; you can install this in your Foundry project using
 
 ```bash
-npm install @axiom-crypto/client@0.2.0-rc2.0
-yarn add @axiom-crypto/client@0.2.0-rc2.0
-pnpm add @axiom-crypto/client@0.2.0-rc2.0
+npm install @axiom-crypto/client@0.2.2-rc2.2-alpha.1
+yarn add @axiom-crypto/client@0.2.2-rc2.2-alpha.1
+pnpm add @axiom-crypto/client@0.2.2-rc2.2-alpha.1
 ```
 
 Once you have written an Axiom circuit, you can test it against your client smart contract using the `AxiomVm` cheatcodes `sendQueryArgs`, `fulfillCallbackArgs`,  `prankCallback`, and `prankOffchainCallback`:
@@ -88,24 +88,18 @@ contract AverageBalanceTest is AxiomTest {
     AverageBalance public averageBalance;
 
     function setUp() public {
-        urlOrAlias = "sepolia";
-        sourceChainId = 11_155_111;
-        _createSelectForkAndSetupAxiom(urlOrAlias, sourceChainId, 5_057_320);
+        _createSelectForkAndSetupAxiom("sepolia", 5_057_320);
 
-        circuitPath = "test/circuit/average.circuit.ts";
         inputPath = "test/circuit/input.json";
-        querySchema = axiomVm.compile(circuitPath, inputPath, urlOrAlias);
-        averageBalance = new AverageBalance(axiomV2QueryAddress, sourceChainId, querySchema);
+        querySchema = axiomVm.compile("test/circuit/average.circuit.ts", inputPath);
+        averageBalance = new AverageBalance(axiomV2QueryAddress, uint64(block.chainid), querySchema);
     }
 
     function test_axiomSendQuery() public {
         axiomVm.getArgsAndSendQuery(
-            circuitPath,
             inputPath,
-            urlOrAlias,
             address(averageBalance),
             callbackExtraData,
-            sourceChainId,
             feeData,
             msg.sender
         );
@@ -113,7 +107,7 @@ contract AverageBalanceTest is AxiomTest {
 
     function test_axiomSendQueryWithArgs() public {
         AxiomVm.AxiomSendQueryArgs memory args = axiomVm.sendQueryArgs(
-            circuitPath, inputPath, urlOrAlias, address(averageBalance), callbackExtraData, sourceChainId, feeData
+            inputPath, address(averageBalance), callbackExtraData, feeData
         );
         axiomV2Query.sendQuery{ value: args.value }(
             args.sourceChainId,
@@ -129,12 +123,9 @@ contract AverageBalanceTest is AxiomTest {
 
     function test_axiomCallback() public {
         axiomVm.prankCallback(
-            circuitPath,
             inputPath,
-            urlOrAlias,
             address(averageBalance),
             callbackExtraData,
-            sourceChainId,
             feeData,
             msg.sender
         );
@@ -142,12 +133,9 @@ contract AverageBalanceTest is AxiomTest {
 
     function test_AxiomCallbackWithArgs() public {
         AxiomVm.AxiomFulfillCallbackArgs memory args = axiomVm.fulfillCallbackArgs(
-            circuitPath,
             inputPath,
-            urlOrAlias,
             address(averageBalance),
             callbackExtraData,
-            sourceChainId,
             feeData,
             msg.sender
         );
@@ -156,12 +144,9 @@ contract AverageBalanceTest is AxiomTest {
 
     function test_axiomOffchainCallback() public {
         axiomVm.prankOffchainCallback(
-            circuitPath,
             inputPath,
-            urlOrAlias,
             address(averageBalance),
             callbackExtraData,
-            sourceChainId,
             feeData,
             msg.sender
         );
@@ -169,12 +154,9 @@ contract AverageBalanceTest is AxiomTest {
 
     function test_AxiomOffchainCallbackWithArgs() public {
         AxiomVm.AxiomFulfillCallbackArgs memory args = axiomVm.fulfillCallbackArgs(
-            circuitPath,
             inputPath,
-            urlOrAlias,
             address(averageBalance),
             callbackExtraData,
-            sourceChainId,
             feeData,
             msg.sender
         );
