@@ -4,9 +4,9 @@ pragma solidity ^0.8.0;
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
-import { IAxiomV2Query } from "../interfaces/query/IAxiomV2Query.sol";
-import { IAxiomV2Client } from "../interfaces/client/IAxiomV2Client.sol";
-import { AxiomV2Addresses } from "../client/AxiomV2Addresses.sol";
+import {IAxiomV2Query} from "../interfaces/query/IAxiomV2Query.sol";
+import {IAxiomV2Client} from "../interfaces/client/IAxiomV2Client.sol";
+import {AxiomV2Addresses} from "../client/AxiomV2Addresses.sol";
 
 contract AxiomVm is Test {
     /// @dev Paths used to store temporary files used for CLI IO
@@ -19,10 +19,36 @@ contract AxiomVm is Test {
     string public queryString;
     string public outputString;
 
+    /// @dev Axiom CLI version to use
+    string constant CLI_VERSION = "0.2";
+    string private constant CLI_VERSION_CHECK_CMD =
+        string(
+            abi.encodePacked(
+                "npm list @axiom-crypto/client | grep -q '@axiom-crypto/client@",
+                CLI_VERSION,
+                "' && echo 1 || echo 0"
+            )
+        );
+    string private constant CLI_VERSION_ERROR =
+        string(
+            abi.encodePacked("Axiom client v", CLI_VERSION, ".x not installed")
+        );
+
+    string urlOrAlias;
+    bool compiled;
+    string circuitPath;
+    bool isMock;
+
     address public axiomV2QueryAddress;
 
-    constructor(address _axiomV2QueryAddress) {
+    constructor(
+        address _axiomV2QueryAddress,
+        string memory _urlOrAlias,
+        bool _isMock
+    ) {
         axiomV2QueryAddress = _axiomV2QueryAddress;
+        urlOrAlias = _urlOrAlias;
+        isMock = _isMock;
     }
 
     struct AxiomSendQueryArgs {
@@ -43,29 +69,30 @@ contract AxiomVm is Test {
         bytes32 querySchema;
         uint256 queryId;
         bytes32[] axiomResults;
-        bytes extraData;
+        bytes callbackExtraData;
         uint256 gasLimit;
-        address callbackAddress;
+        address callbackTarget;
     }
 
     /**
      * @dev Compiles a circuit using the Axiom CLI via FFI
-     * @param circuitPath path to the circuit file
+     * @param _circuitPath path to the circuit file
      * @param inputPath path to the input file
-     * @param urlOrAlias URL or alias of the provider
      * @return querySchema
      */
-    function compile(string memory circuitPath, string memory inputPath, string memory urlOrAlias)
-        public
-        returns (bytes32 querySchema)
-    {
+    function compile(
+        string memory _circuitPath,
+        string memory inputPath
+    ) public returns (bytes32 querySchema) {
+        circuitPath = _circuitPath;
+        compiled = true;
         _validateAxiomSetup();
-        string[] memory cli = new string[](13);
+        string[] memory cli = new string[](14);
         cli[0] = "npx";
         cli[1] = "axiom";
         cli[2] = "circuit";
         cli[3] = "compile";
-        cli[4] = circuitPath;
+        cli[4] = _circuitPath;
         cli[5] = "--provider";
         cli[6] = vm.rpcUrl(urlOrAlias);
         cli[7] = "--inputs";
@@ -74,6 +101,7 @@ contract AxiomVm is Test {
         cli[10] = COMPILED_PATH;
         cli[11] = "--function";
         cli[12] = "circuit";
+        if (isMock) cli[13] = "--mock";
         vm.ffi(cli);
 
         string memory artifact = vm.readFile(COMPILED_PATH);
@@ -83,64 +111,77 @@ contract AxiomVm is Test {
 
     /**
      * @dev Generates args for the sendQuery function
-     * @param circuitPath path to the circuit file
      * @param inputPath path to the input file
-     * @param urlOrAlias the URL or alias of the RPC provider
-     * @param callback the callback contract address
+     * @param callbackTarget the callback contract address
      * @param callbackExtraData extra data to be passed to the callback contract
-     * @param sourceChainId the source chain ID
      * @param feeData the fee data
      * @return args the sendQuery args
      */
     function sendQueryArgs(
-        string memory circuitPath,
         string memory inputPath,
-        string memory urlOrAlias,
-        address callback,
+        address callbackTarget,
         bytes memory callbackExtraData,
-        uint64 sourceChainId,
         IAxiomV2Query.AxiomV2FeeData memory feeData
     ) public returns (AxiomSendQueryArgs memory args) {
-        _prove(circuitPath, inputPath, urlOrAlias, sourceChainId);
-        string memory _queryString = _queryParams(urlOrAlias, callback, callbackExtraData, sourceChainId, feeData);
+        _prove(inputPath);
+        string memory _queryString = _queryParams(
+            callbackTarget,
+            callbackExtraData,
+            feeData
+        );
         args = _parseSendQueryArgs(_queryString);
     }
 
     /**
+     * @dev Sets the mock flag
+     * @param _isMock the mock flag
+     */
+    function setMock(bool _isMock) public {
+        isMock = _isMock;
+    }
+
+    /**
      * @dev Generates arguments for the fulfillCallback function
-     * @param circuitPath path to the circuit file
      * @param inputPath path to the input file
-     * @param urlOrAlias the URL or alias of the RPC provider
-     * @param callback the callback contract address
+     * @param callbackTarget the callback contract address
      * @param callbackExtraData extra data to be passed to the callback contract
-     * @param sourceChainId the source chain ID
      * @param feeData the fee data
      * @param caller the address of the caller
      * @return args the fulfillCallback args
      */
     function fulfillCallbackArgs(
-        string memory circuitPath,
         string memory inputPath,
-        string memory urlOrAlias,
-        address callback,
+        address callbackTarget,
         bytes memory callbackExtraData,
-        uint64 sourceChainId,
         IAxiomV2Query.AxiomV2FeeData memory feeData,
         address caller
     ) public returns (AxiomFulfillCallbackArgs memory args) {
-        string memory _outputString = _prove(circuitPath, inputPath, urlOrAlias, sourceChainId);
-        string memory _queryString = _queryParams(urlOrAlias, callback, callbackExtraData, sourceChainId, feeData);
+        uint64 sourceChainId = uint64(block.chainid);
+        string memory _outputString = _prove(inputPath);
+        string memory _queryString = _queryParams(
+            callbackTarget,
+            callbackExtraData,
+            feeData
+        );
 
-        AxiomSendQueryArgs memory _sendQueryArgs = _parseSendQueryArgs(_queryString);
+        AxiomSendQueryArgs memory _sendQueryArgs = _parseSendQueryArgs(
+            _queryString
+        );
         args = AxiomFulfillCallbackArgs({
             sourceChainId: sourceChainId,
             caller: caller,
-            querySchema: abi.decode(vm.parseJson(compiledString, ".querySchema"), (bytes32)),
+            querySchema: abi.decode(
+                vm.parseJson(compiledString, ".querySchema"),
+                (bytes32)
+            ),
             queryId: vm.parseJsonUint(_queryString, ".queryId"),
-            axiomResults: abi.decode(vm.parseJson(_outputString, ".computeResults"), (bytes32[])),
-            extraData: _sendQueryArgs.callback.extraData,
+            axiomResults: abi.decode(
+                vm.parseJson(_outputString, ".computeResults"),
+                (bytes32[])
+            ),
+            callbackExtraData: _sendQueryArgs.callback.extraData,
             gasLimit: feeData.callbackGasLimit,
-            callbackAddress: callback
+            callbackTarget: callbackTarget
         });
     }
 
@@ -150,34 +191,37 @@ contract AxiomVm is Test {
      */
     function prankCallback(AxiomFulfillCallbackArgs memory args) public {
         vm.prank(axiomV2QueryAddress);
-        IAxiomV2Client(args.callbackAddress).axiomV2Callback{ gas: args.gasLimit }(
-            args.sourceChainId, args.caller, args.querySchema, args.queryId, args.axiomResults, args.extraData
+        IAxiomV2Client(args.callbackTarget).axiomV2Callback{gas: args.gasLimit}(
+            args.sourceChainId,
+            args.caller,
+            args.querySchema,
+            args.queryId,
+            args.axiomResults,
+            args.callbackExtraData
         );
     }
 
     /**
      * @dev Generates the fulfill callback args and and fulfills the onchain query
-     * @param circuitPath path to the circuit file
      * @param inputPath path to the input file
-     * @param urlOrAlias the URL or alias of the RPC provider
-     * @param callback the callback contract address
+     * @param callbackTarget the callback contract address
      * @param callbackExtraData extra data to be passed to the callback contract
-     * @param sourceChainId the source chain ID
      * @param feeData the fee data
      * @param caller the address of the caller
      */
     function prankCallback(
-        string memory circuitPath,
         string memory inputPath,
-        string memory urlOrAlias,
-        address callback,
+        address callbackTarget,
         bytes memory callbackExtraData,
-        uint64 sourceChainId,
         IAxiomV2Query.AxiomV2FeeData memory feeData,
         address caller
     ) public {
         AxiomFulfillCallbackArgs memory args = fulfillCallbackArgs(
-            circuitPath, inputPath, urlOrAlias, callback, callbackExtraData, sourceChainId, feeData, caller
+            inputPath,
+            callbackTarget,
+            callbackExtraData,
+            feeData,
+            caller
         );
         prankCallback(args);
     }
@@ -186,65 +230,70 @@ contract AxiomVm is Test {
      * @dev Fulfills the callback for an offchain query
      * @param args the arguments for the callback
      */
-    function prankOffchainCallback(AxiomFulfillCallbackArgs memory args) public {
+    function prankOffchainCallback(
+        AxiomFulfillCallbackArgs memory args
+    ) public {
         vm.prank(axiomV2QueryAddress);
-        IAxiomV2Client(args.callbackAddress).axiomV2OffchainCallback{ gas: args.gasLimit }(
-            args.sourceChainId, args.caller, args.querySchema, args.queryId, args.axiomResults, args.extraData
+        IAxiomV2Client(args.callbackTarget).axiomV2OffchainCallback{
+            gas: args.gasLimit
+        }(
+            args.sourceChainId,
+            args.caller,
+            args.querySchema,
+            args.queryId,
+            args.axiomResults,
+            args.callbackExtraData
         );
     }
 
     /**
      * @dev Generates the fulfill callback args and fulfills the offchain query
-     * @param circuitPath path to the circuit file
      * @param inputPath path to the input file
-     * @param urlOrAlias the URL or alias of the RPC provider
-     * @param callback the callback contract address
+     * @param callbackTarget the callback contract address
      * @param callbackExtraData extra data to be passed to the callback contract
-     * @param sourceChainId the source chain ID
      * @param feeData the fee data
      * @param caller the address of the caller
      */
     function prankOffchainCallback(
-        string memory circuitPath,
         string memory inputPath,
-        string memory urlOrAlias,
-        address callback,
+        address callbackTarget,
         bytes memory callbackExtraData,
-        uint64 sourceChainId,
         IAxiomV2Query.AxiomV2FeeData memory feeData,
         address caller
     ) public {
         AxiomFulfillCallbackArgs memory args = fulfillCallbackArgs(
-            circuitPath, inputPath, urlOrAlias, callback, callbackExtraData, sourceChainId, feeData, caller
+            inputPath,
+            callbackTarget,
+            callbackExtraData,
+            feeData,
+            caller
         );
         prankOffchainCallback(args);
     }
 
     /**
      * @dev Generates sendQueryArgs and sends a query to the AxiomV2Query contract.
-     * @param circuitPath path to the circuit file
      * @param inputPath path to the input file
-     * @param urlOrAlias the URL or alias of the RPC provider
-     * @param callback the callback contract address
+     * @param callbackTarget the callback contract address
      * @param callbackExtraData extra data to be passed to the callback contract
-     * @param sourceChainId the source chain ID
      * @param feeData the fee data
      * @param caller the address of the caller
      */
     function getArgsAndSendQuery(
-        string memory circuitPath,
         string memory inputPath,
-        string memory urlOrAlias,
-        address callback,
+        address callbackTarget,
         bytes memory callbackExtraData,
-        uint64 sourceChainId,
         IAxiomV2Query.AxiomV2FeeData memory feeData,
         address caller
     ) public {
-        AxiomVm.AxiomSendQueryArgs memory args =
-            sendQueryArgs(circuitPath, inputPath, urlOrAlias, callback, callbackExtraData, sourceChainId, feeData);
+        AxiomVm.AxiomSendQueryArgs memory args = sendQueryArgs(
+            inputPath,
+            callbackTarget,
+            callbackExtraData,
+            feeData
+        );
         vm.prank(caller);
-        IAxiomV2Query(axiomV2QueryAddress).sendQuery{ value: args.value }(
+        IAxiomV2Query(axiomV2QueryAddress).sendQuery{value: args.value}(
             args.sourceChainId,
             args.dataQueryHash,
             args.computeQuery,
@@ -271,16 +320,19 @@ contract AxiomVm is Test {
         string[] memory axiomCheck = new string[](3);
         axiomCheck[0] = "sh";
         axiomCheck[1] = "-c";
-        axiomCheck[2] = "npm list @axiom-crypto/client | grep -q '@axiom-crypto/client@0.2' && echo 1 || echo 0";
+        axiomCheck[2] = CLI_VERSION_CHECK_CMD;
         bytes memory axiomOutput = vm.ffi(axiomCheck);
-        require(_parseBoolean(string(axiomOutput)), "Axiom client v0.2.x not installed");
+        require(_parseBoolean(string(axiomOutput)), CLI_VERSION_ERROR);
     }
 
-    function _prove(string memory circuitPath, string memory inputPath, string memory urlOrAlias, uint64 sourceChainId)
-        internal
-        returns (string memory output)
-    {
+    function _prove(
+        string memory inputPath
+    ) internal returns (string memory output) {
         _validateAxiomSetup();
+        require(
+            compiled,
+            "Circuit has not been compiled. Run `compile` first."
+        );
         vm.writeFile(COMPILED_PATH, compiledString);
         string[] memory cli = new string[](18);
         cli[0] = "npx";
@@ -288,9 +340,9 @@ contract AxiomVm is Test {
         cli[2] = "circuit";
         cli[3] = "prove";
         cli[4] = circuitPath;
-        cli[5] = "--mock";
+        if (isMock) cli[5] = "--mock";
         cli[6] = "--sourceChainId";
-        cli[7] = vm.toString(sourceChainId);
+        cli[7] = vm.toString(block.chainid);
         cli[8] = "--compiled";
         cli[9] = COMPILED_PATH;
         cli[10] = "--provider";
@@ -307,10 +359,8 @@ contract AxiomVm is Test {
     }
 
     function _queryParams(
-        string memory urlOrAlias,
-        address callback,
+        address callbackTarget,
         bytes memory callbackExtraData,
-        uint64 sourceChainId,
         IAxiomV2Query.AxiomV2FeeData memory feeData
     ) internal returns (string memory output) {
         _validateAxiomSetup();
@@ -320,9 +370,9 @@ contract AxiomVm is Test {
         cli[1] = "axiom";
         cli[2] = "circuit";
         cli[3] = "query-params";
-        cli[4] = vm.toString(callback); // the callback target address
+        cli[4] = vm.toString(callbackTarget);
         cli[5] = "--sourceChainId";
-        cli[6] = vm.toString(sourceChainId);
+        cli[6] = vm.toString(block.chainid);
         cli[7] = "--refundAddress";
         cli[8] = vm.toString(msg.sender);
         cli[9] = "--callbackExtraData";
@@ -348,21 +398,51 @@ contract AxiomVm is Test {
      * @param _queryString the string output from the CLI
      * @return args the AxiomSendQueryArgs
      */
-    function _parseSendQueryArgs(string memory _queryString) internal pure returns (AxiomSendQueryArgs memory args) {
-        args.sourceChainId = uint64(vm.parseJsonUint(_queryString, ".args.sourceChainId"));
-        args.dataQueryHash = vm.parseJsonBytes32(_queryString, ".args.dataQueryHash");
+    function _parseSendQueryArgs(
+        string memory _queryString
+    ) internal pure returns (AxiomSendQueryArgs memory args) {
+        args.sourceChainId = uint64(
+            vm.parseJsonUint(_queryString, ".args.sourceChainId")
+        );
+        args.dataQueryHash = vm.parseJsonBytes32(
+            _queryString,
+            ".args.dataQueryHash"
+        );
 
-        args.computeQuery.k = uint8(vm.parseJsonUint(_queryString, ".args.computeQuery.k"));
-        args.computeQuery.resultLen = uint16(vm.parseJsonUint(_queryString, ".args.computeQuery.resultLen"));
-        args.computeQuery.vkey = vm.parseJsonBytes32Array(_queryString, ".args.computeQuery.vkey");
-        args.computeQuery.computeProof = vm.parseJsonBytes(_queryString, ".args.computeQuery.computeProof");
+        args.computeQuery.k = uint8(
+            vm.parseJsonUint(_queryString, ".args.computeQuery.k")
+        );
+        args.computeQuery.resultLen = uint16(
+            vm.parseJsonUint(_queryString, ".args.computeQuery.resultLen")
+        );
+        args.computeQuery.vkey = vm.parseJsonBytes32Array(
+            _queryString,
+            ".args.computeQuery.vkey"
+        );
+        args.computeQuery.computeProof = vm.parseJsonBytes(
+            _queryString,
+            ".args.computeQuery.computeProof"
+        );
 
-        args.callback.target = vm.parseJsonAddress(_queryString, ".args.callback.target");
-        args.callback.extraData = vm.parseJsonBytes(_queryString, ".args.callback.extraData");
+        args.callback.target = vm.parseJsonAddress(
+            _queryString,
+            ".args.callback.target"
+        );
+        args.callback.extraData = vm.parseJsonBytes(
+            _queryString,
+            ".args.callback.extraData"
+        );
 
-        args.feeData.maxFeePerGas = uint64(vm.parseJsonUint(_queryString, ".args.feeData.maxFeePerGas"));
-        args.feeData.callbackGasLimit = uint32(vm.parseJsonUint(_queryString, ".args.feeData.callbackGasLimit"));
-        args.feeData.overrideAxiomQueryFee = vm.parseJsonUint(_queryString, ".args.feeData.overrideAxiomQueryFee");
+        args.feeData.maxFeePerGas = uint64(
+            vm.parseJsonUint(_queryString, ".args.feeData.maxFeePerGas")
+        );
+        args.feeData.callbackGasLimit = uint32(
+            vm.parseJsonUint(_queryString, ".args.feeData.callbackGasLimit")
+        );
+        args.feeData.overrideAxiomQueryFee = vm.parseJsonUint(
+            _queryString,
+            ".args.feeData.overrideAxiomQueryFee"
+        );
 
         args.userSalt = vm.parseJsonBytes32(_queryString, ".args.userSalt");
         args.refundee = vm.parseJsonAddress(_queryString, ".args.refundee");
