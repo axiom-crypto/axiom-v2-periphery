@@ -7,7 +7,6 @@ ffi = true
 fs_permissions = [{ access = "read-write", path = ".axiom" }]
 
 [rpc_endpoints]
-goerli = "${PROVIDER_URI_GOERLI}"
 sepolia = "${PROVIDER_URI_SEPOLIA}"
 mainnet = "${PROVIDER_URI_MAINNET}"
 
