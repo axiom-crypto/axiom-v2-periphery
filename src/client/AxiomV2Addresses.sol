@@ -12,6 +12,12 @@ library AxiomV2Addresses {
     address public constant SEPOLIA_AXIOM_V2_CORE_MOCK_ADDRESS = 0x69963768F8407dE501029680dE46945F838Fc98B;
     address public constant SEPOLIA_AXIOM_V2_QUERY_MOCK_ADDRESS = 0x83c8c0B395850bA55c830451Cfaca4F2A667a983;
 
+    uint256 public constant AXIOM_V2_CORE_DEPLOY_BLOCK = 18_993_287;
+    uint256 public constant AXIOM_V2_QUERY_DEPLOY_BLOCK = 19_027_522;
+
+    uint256 public constant SEPOLIA_AXIOM_V2_CORE_MOCK_DEPLOY_BLOCK = 5_095_060;
+    uint256 public constant SEPOLIA_AXIOM_V2_QUERY_MOCK_DEPLOY_BLOCK = 5_103_063;
+
     /// @dev Error returned if the corresponding Axiom V2 contract does not exist for the requested chainId
     error ContractDoesNotExistForChainId();
 
@@ -75,6 +81,54 @@ library AxiomV2Addresses {
         }
         if (addr == address(0)) {
             revert ContractNotYetDeployed();
+        }
+    }
+
+    /// @notice Returns the block number at which the AxiomV2Query contract was deployed on the chain corresponding to `chainId`
+    /// @param chainId The chainId of the AxiomV2Query contract
+    /// @return blockNumber The block number at which the AxiomV2Query contract was deployed
+    function axiomV2QueryDeployBlock(uint64 chainId) public pure returns (uint256 blockNumber) {
+        if (chainId == MAINNET_CHAIN_ID) {
+            blockNumber = AXIOM_V2_QUERY_DEPLOY_BLOCK;
+        } else {
+            revert ContractDoesNotExistForChainId();
+        }
+    }
+
+    /// @notice Returns the block number at which the AxiomV2QueryMock contract was deployed on the chain corresponding to `chainId`
+    /// @param chainId The chainId of the AxiomV2QueryMock contract
+    /// @return blockNumber The block number at which the AxiomV2QueryMock contract was deployed
+    function axiomV2QueryMockDeployBlock(uint64 chainId) public pure returns (uint256 blockNumber) {
+        if (chainId == MAINNET_CHAIN_ID) {
+            revert ContractDoesNotExistForChainId();
+        } else if (chainId == SEPOLIA_CHAIN_ID) {
+            blockNumber = SEPOLIA_AXIOM_V2_QUERY_MOCK_DEPLOY_BLOCK;
+        } else {
+            revert ContractDoesNotExistForChainId();
+        }
+    }
+
+    /// @notice Returns the block number at which the AxiomV2Core contract was deployed on the chain corresponding to `chainId`
+    /// @param chainId The chainId of the AxiomV2Core contract
+    /// @return blockNumber The block number at which the AxiomV2Core contract was deployed
+    function axiomV2CoreDeployBlock(uint64 chainId) public pure returns (uint256 blockNumber) {
+        if (chainId == MAINNET_CHAIN_ID) {
+            blockNumber = AXIOM_V2_CORE_DEPLOY_BLOCK;
+        } else {
+            revert ContractDoesNotExistForChainId();
+        }
+    }
+
+    /// @notice Returns the block number at which the AxiomV2CoreMock contract was deployed on the chain corresponding to `chainId`
+    /// @param chainId The chainId of the AxiomV2CoreMock contract
+    /// @return blockNumber The block number at which the AxiomV2CoreMock contract was deployed
+    function axiomV2CoreMockDeployBlock(uint64 chainId) public pure returns (uint256 blockNumber) {
+        if (chainId == MAINNET_CHAIN_ID) {
+            revert ContractDoesNotExistForChainId();
+        } else if (chainId == SEPOLIA_CHAIN_ID) {
+            blockNumber = SEPOLIA_AXIOM_V2_CORE_MOCK_DEPLOY_BLOCK;
+        } else {
+            revert ContractDoesNotExistForChainId();
         }
     }
 }

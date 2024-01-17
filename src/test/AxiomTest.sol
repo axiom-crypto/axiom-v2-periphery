@@ -39,10 +39,32 @@ abstract contract AxiomTest is Test {
         vm.createSelectFork(urlOrAlias, forkBlock);
         uint64 chainId = uint64(block.chainid);
 
-        axiomV2CoreAddress = AxiomV2Addresses.axiomV2CoreAddress(chainId);
-        axiomV2Core = IAxiomV2Core(axiomV2CoreAddress);
+        if (chainId == 1) {
+            axiomV2CoreAddress = AxiomV2Addresses.axiomV2CoreAddress(chainId);
+            axiomV2QueryAddress = AxiomV2Addresses.axiomV2QueryAddress(chainId);
 
-        axiomV2QueryAddress = AxiomV2Addresses.axiomV2QueryAddress(chainId);
+            require(
+                forkBlock >= AxiomV2Addresses.axiomV2CoreDeployBlock(chainId),
+                "AxiomV2Core not yet deployed at forkBlock"
+            );
+            require(
+                forkBlock >= AxiomV2Addresses.axiomV2QueryDeployBlock(chainId),
+                "AxiomV2Query not yet deployed at forkBlock"
+            );
+        } else {
+            axiomV2CoreAddress = AxiomV2Addresses.axiomV2CoreMockAddress(chainId);
+            axiomV2QueryAddress = AxiomV2Addresses.axiomV2QueryMockAddress(chainId);
+
+            require(
+                forkBlock >= AxiomV2Addresses.axiomV2CoreMockDeployBlock(chainId),
+                "AxiomV2CoreMock not yet deployed at forkBlock"
+            );
+            require(
+                forkBlock >= AxiomV2Addresses.axiomV2QueryMockDeployBlock(chainId),
+                "AxiomV2QueryMock not yet deployed at forkBlock"
+            );
+        }
+        axiomV2Core = IAxiomV2Core(axiomV2CoreAddress);
         axiomV2Query = IAxiomV2Query(axiomV2QueryAddress);
 
         vm.makePersistent(axiomV2CoreAddress);
