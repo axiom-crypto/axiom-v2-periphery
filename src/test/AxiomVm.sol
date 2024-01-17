@@ -14,8 +14,6 @@ contract AxiomVm is Test {
     string constant QUERY_PATH = ".axiom/query.json";
     string constant OUTPUT_PATH = ".axiom/output.json";
 
-    string circuitPath;
-
     /// @dev Used to store inputs and outputs from FFI
     string public compiledString;
     string public queryString;
@@ -38,12 +36,19 @@ contract AxiomVm is Test {
 
     string urlOrAlias;
     bool compiled;
+    string circuitPath;
+    bool isMock;
 
     address public axiomV2QueryAddress;
 
-    constructor(address _axiomV2QueryAddress, string memory _urlOrAlias) {
+    constructor(
+        address _axiomV2QueryAddress,
+        string memory _urlOrAlias,
+        bool _isMock
+    ) {
         axiomV2QueryAddress = _axiomV2QueryAddress;
         urlOrAlias = _urlOrAlias;
+        isMock = _isMock;
     }
 
     struct AxiomSendQueryArgs {
@@ -64,9 +69,9 @@ contract AxiomVm is Test {
         bytes32 querySchema;
         uint256 queryId;
         bytes32[] axiomResults;
-        bytes extraData;
+        bytes callbackExtraData;
         uint256 gasLimit;
-        address callbackAddress;
+        address callbackTarget;
     }
 
     /**
@@ -96,7 +101,7 @@ contract AxiomVm is Test {
         cli[10] = COMPILED_PATH;
         cli[11] = "--function";
         cli[12] = "circuit";
-        cli[13] = "--mock";
+        if (isMock) cli[13] = "--mock";
         vm.ffi(cli);
 
         string memory artifact = vm.readFile(COMPILED_PATH);
@@ -107,20 +112,20 @@ contract AxiomVm is Test {
     /**
      * @dev Generates args for the sendQuery function
      * @param inputPath path to the input file
-     * @param callback the callback contract address
+     * @param callbackTarget the callback contract address
      * @param callbackExtraData extra data to be passed to the callback contract
      * @param feeData the fee data
      * @return args the sendQuery args
      */
     function sendQueryArgs(
         string memory inputPath,
-        address callback,
+        address callbackTarget,
         bytes memory callbackExtraData,
         IAxiomV2Query.AxiomV2FeeData memory feeData
     ) public returns (AxiomSendQueryArgs memory args) {
         _prove(inputPath);
         string memory _queryString = _queryParams(
-            callback,
+            callbackTarget,
             callbackExtraData,
             feeData
         );
@@ -128,9 +133,17 @@ contract AxiomVm is Test {
     }
 
     /**
+     * @dev Sets the mock flag
+     * @param _isMock the mock flag
+     */
+    function setMock(bool _isMock) public {
+        isMock = _isMock;
+    }
+
+    /**
      * @dev Generates arguments for the fulfillCallback function
      * @param inputPath path to the input file
-     * @param callback the callback contract address
+     * @param callbackTarget the callback contract address
      * @param callbackExtraData extra data to be passed to the callback contract
      * @param feeData the fee data
      * @param caller the address of the caller
@@ -138,7 +151,7 @@ contract AxiomVm is Test {
      */
     function fulfillCallbackArgs(
         string memory inputPath,
-        address callback,
+        address callbackTarget,
         bytes memory callbackExtraData,
         IAxiomV2Query.AxiomV2FeeData memory feeData,
         address caller
@@ -146,7 +159,7 @@ contract AxiomVm is Test {
         uint64 sourceChainId = uint64(block.chainid);
         string memory _outputString = _prove(inputPath);
         string memory _queryString = _queryParams(
-            callback,
+            callbackTarget,
             callbackExtraData,
             feeData
         );
@@ -166,9 +179,9 @@ contract AxiomVm is Test {
                 vm.parseJson(_outputString, ".computeResults"),
                 (bytes32[])
             ),
-            extraData: _sendQueryArgs.callback.extraData,
+            callbackExtraData: _sendQueryArgs.callback.extraData,
             gasLimit: feeData.callbackGasLimit,
-            callbackAddress: callback
+            callbackTarget: callbackTarget
         });
     }
 
@@ -178,36 +191,34 @@ contract AxiomVm is Test {
      */
     function prankCallback(AxiomFulfillCallbackArgs memory args) public {
         vm.prank(axiomV2QueryAddress);
-        IAxiomV2Client(args.callbackAddress).axiomV2Callback{
-            gas: args.gasLimit
-        }(
+        IAxiomV2Client(args.callbackTarget).axiomV2Callback{gas: args.gasLimit}(
             args.sourceChainId,
             args.caller,
             args.querySchema,
             args.queryId,
             args.axiomResults,
-            args.extraData
+            args.callbackExtraData
         );
     }
 
     /**
      * @dev Generates the fulfill callback args and and fulfills the onchain query
      * @param inputPath path to the input file
-     * @param callback the callback contract address
+     * @param callbackTarget the callback contract address
      * @param callbackExtraData extra data to be passed to the callback contract
      * @param feeData the fee data
      * @param caller the address of the caller
      */
     function prankCallback(
         string memory inputPath,
-        address callback,
+        address callbackTarget,
         bytes memory callbackExtraData,
         IAxiomV2Query.AxiomV2FeeData memory feeData,
         address caller
     ) public {
         AxiomFulfillCallbackArgs memory args = fulfillCallbackArgs(
             inputPath,
-            callback,
+            callbackTarget,
             callbackExtraData,
             feeData,
             caller
@@ -223,7 +234,7 @@ contract AxiomVm is Test {
         AxiomFulfillCallbackArgs memory args
     ) public {
         vm.prank(axiomV2QueryAddress);
-        IAxiomV2Client(args.callbackAddress).axiomV2OffchainCallback{
+        IAxiomV2Client(args.callbackTarget).axiomV2OffchainCallback{
             gas: args.gasLimit
         }(
             args.sourceChainId,
@@ -231,28 +242,28 @@ contract AxiomVm is Test {
             args.querySchema,
             args.queryId,
             args.axiomResults,
-            args.extraData
+            args.callbackExtraData
         );
     }
 
     /**
      * @dev Generates the fulfill callback args and fulfills the offchain query
      * @param inputPath path to the input file
-     * @param callback the callback contract address
+     * @param callbackTarget the callback contract address
      * @param callbackExtraData extra data to be passed to the callback contract
      * @param feeData the fee data
      * @param caller the address of the caller
      */
     function prankOffchainCallback(
         string memory inputPath,
-        address callback,
+        address callbackTarget,
         bytes memory callbackExtraData,
         IAxiomV2Query.AxiomV2FeeData memory feeData,
         address caller
     ) public {
         AxiomFulfillCallbackArgs memory args = fulfillCallbackArgs(
             inputPath,
-            callback,
+            callbackTarget,
             callbackExtraData,
             feeData,
             caller
@@ -263,21 +274,21 @@ contract AxiomVm is Test {
     /**
      * @dev Generates sendQueryArgs and sends a query to the AxiomV2Query contract.
      * @param inputPath path to the input file
-     * @param callback the callback contract address
+     * @param callbackTarget the callback contract address
      * @param callbackExtraData extra data to be passed to the callback contract
      * @param feeData the fee data
      * @param caller the address of the caller
      */
     function getArgsAndSendQuery(
         string memory inputPath,
-        address callback,
+        address callbackTarget,
         bytes memory callbackExtraData,
         IAxiomV2Query.AxiomV2FeeData memory feeData,
         address caller
     ) public {
         AxiomVm.AxiomSendQueryArgs memory args = sendQueryArgs(
             inputPath,
-            callback,
+            callbackTarget,
             callbackExtraData,
             feeData
         );
@@ -329,7 +340,7 @@ contract AxiomVm is Test {
         cli[2] = "circuit";
         cli[3] = "prove";
         cli[4] = circuitPath;
-        cli[5] = "--mock";
+        if (isMock) cli[5] = "--mock";
         cli[6] = "--sourceChainId";
         cli[7] = vm.toString(block.chainid);
         cli[8] = "--compiled";
@@ -348,7 +359,7 @@ contract AxiomVm is Test {
     }
 
     function _queryParams(
-        address callback,
+        address callbackTarget,
         bytes memory callbackExtraData,
         IAxiomV2Query.AxiomV2FeeData memory feeData
     ) internal returns (string memory output) {
@@ -359,7 +370,7 @@ contract AxiomVm is Test {
         cli[1] = "axiom";
         cli[2] = "circuit";
         cli[3] = "query-params";
-        cli[4] = vm.toString(callback); // the callback target address
+        cli[4] = vm.toString(callbackTarget);
         cli[5] = "--sourceChainId";
         cli[6] = vm.toString(block.chainid);
         cli[7] = "--refundAddress";

@@ -84,4 +84,10 @@ contract AverageBalanceTest is AxiomTest {
         );
         axiomVm.prankOffchainCallback(args);
     }
+
+    function test_compileNotMocked() public {
+        axiomVm.setMock(false);
+        bytes32 querySchema = axiomVm.compile("test/circuit/average.circuit.ts", inputPath);
+        require(querySchema != bytes32(0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef), "compile failed");
+    }
 }

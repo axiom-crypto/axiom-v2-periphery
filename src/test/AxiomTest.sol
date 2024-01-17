@@ -48,6 +48,6 @@ abstract contract AxiomTest is Test {
         vm.makePersistent(axiomV2CoreAddress);
         vm.makePersistent(axiomV2QueryAddress);
 
-        axiomVm = new AxiomVm(axiomV2QueryAddress, urlOrAlias);
+        axiomVm = new AxiomVm(axiomV2QueryAddress, urlOrAlias, true);
     }
 }
