@@ -17,7 +17,6 @@ abstract contract AxiomTest is Test {
     IAxiomV2Core public axiomV2Core;
     IAxiomV2Query public axiomV2Query;
 
-    string public circuitPath;
     string public inputPath;
 
     bytes32 public querySchema;
