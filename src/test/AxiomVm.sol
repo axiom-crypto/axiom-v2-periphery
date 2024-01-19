@@ -20,7 +20,7 @@ contract AxiomVm is Test {
     string public outputString;
 
     /// @dev Axiom CLI version to use
-    string constant CLI_VERSION = "0.2";
+    string constant CLI_VERSION = "2.0";
     string private constant CLI_VERSION_CHECK_CMD =
         string(
             abi.encodePacked(

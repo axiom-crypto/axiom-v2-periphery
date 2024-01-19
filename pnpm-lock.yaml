@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@axiom-crypto/client':
-    specifier: 0.2.2-rc2.2-alpha.1
-    version: 0.2.2-rc2.2-alpha.1(typescript@5.3.3)
+    specifier: 2.0.0
+    version: 2.0.0(typescript@5.3.3)
   dotenv:
     specifier: ^16.3.1
     version: 16.3.1
@@ -23,13 +23,13 @@ packages:
     resolution: {integrity: sha512-nA9XHtlAkYfJxY7bce8DcN7eKxWWCWkU+1GR9d+U6MbNpfwQp8TI7vqOsBsMcHoT4mBu2kypKoSKnghEzOOq5Q==}
     dev: false
 
-  /@axiom-crypto/circuit@0.2.2-rc2.2-alpha.1(typescript@5.3.3):
-    resolution: {integrity: sha512-MC1vR579g/D4r8BtDzJZnea64dZxnZFJ13A+VHnQTKD89G0KdbxPBWyuJnG6WsaQdJ1EvuFWkQsijrgJNovS9w==}
+  /@axiom-crypto/circuit@2.0.0(typescript@5.3.3):
+    resolution: {integrity: sha512-dVtKWnimvCwysucYLunhw/+9GetZiFxb69vOmC2pzggdFmTSLj0T52CsdAzBTxHnOTz8k7dpg8pAcq5NUHiNAg==}
     dependencies:
-      '@axiom-crypto/core': 2.3.0-rc2.2
-      '@axiom-crypto/halo2-lib-js': 0.2.14-rc.0
-      '@axiom-crypto/halo2-wasm': 0.2.11-rc.1
-      '@axiom-crypto/tools': 0.3.36-rc2.1
+      '@axiom-crypto/core': 2.3.3
+      '@axiom-crypto/halo2-lib-js': 0.3.4
+      '@axiom-crypto/halo2-wasm': 0.3.4
+      '@axiom-crypto/tools': 2.0.0
       commander: 11.1.0
       ethers: 6.10.0
       viem: 1.21.4(typescript@5.3.3)
@@ -41,17 +41,16 @@ packages:
       - zod
     dev: false
 
-  /@axiom-crypto/client@0.2.2-rc2.2-alpha.1(typescript@5.3.3):
-    resolution: {integrity: sha512-qjz052YjDaxStF1IkBY+DiEEQHrGxrKL8+OSDV6zE8vIpqnYZBUTmEtpkI1EH6W3Nr/6h4J1LZl6HHBnIuZZEQ==}
+  /@axiom-crypto/client@2.0.0(typescript@5.3.3):
+    resolution: {integrity: sha512-a+ELpYiyqw89Z3yDXP6NcDgEWx46RWIvtm4gY7Xyf2g/8hg38YfQRc+mUNIIRRZv1dD1rDGqwQcZ3fKNiBc0Lg==}
     hasBin: true
     dependencies:
-      '@axiom-crypto/circuit': 0.2.2-rc2.2-alpha.1(typescript@5.3.3)
-      '@axiom-crypto/core': 2.3.0-rc2.2
+      '@axiom-crypto/circuit': 2.0.0(typescript@5.3.3)
+      '@axiom-crypto/core': 2.3.3
       chalk: 4.1.2
       commander: 11.1.0
-      ethers: 6.10.0
       prompts: 2.4.2
-      viem: 1.21.4(typescript@5.3.3)
+      viem: 2.4.0(typescript@5.3.3)
     transitivePeerDependencies:
       - bufferutil
       - debug
@@ -60,12 +59,10 @@ packages:
       - zod
     dev: false
 
-  /@axiom-crypto/core@2.3.0-rc2.2:
-    resolution: {integrity: sha512-Cl941locX9dLuwAY7rV8U2THQE/rWfJVu75WghzDUgoAZVq5KTI5VUr+DrkZ5PY6duIp7hWHwiRrJRozuf7RMg==}
+  /@axiom-crypto/core@2.3.3:
+    resolution: {integrity: sha512-7oY2e7KYcHE9KDX3F7uRHe3IDLVVTcyWSjs0XsBaNcWmTga5gd0Hrvny3r+bs2xSHGq8OVgCwjhKapsOjgn/gg==}
     dependencies:
-      '@axiom-crypto/halo2-lib-js': 0.2.10
-      '@axiom-crypto/halo2-wasm': 0.2.7
-      '@axiom-crypto/tools': 0.3.36-rc2.1
+      '@axiom-crypto/tools': 2.0.0
       axios: 1.6.5
       bs58: 5.0.0
       ethers: 6.10.0
@@ -76,10 +73,10 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@axiom-crypto/halo2-lib-js@0.2.10:
-    resolution: {integrity: sha512-gvO9fqB/w10q0RRoZ+Q9utvcWcDldHqIl4Jf8t9luoI+vXipZlyT8NIStykOvd6g64guymCnMeAv2vvObvHxIA==}
+  /@axiom-crypto/halo2-lib-js@0.3.4:
+    resolution: {integrity: sha512-E/i7EqlcvjcfXZejL8HcpvFQIIMJxcMrVBXsdaDJGgEXVc6pEDJ07Hy3drLbhQ007ZJ8aultw3HSfD9gJRkh4w==}
     dependencies:
-      '@axiom-crypto/halo2-wasm': 0.2.7
+      '@axiom-crypto/halo2-wasm': 0.3.4
       ethers: 6.10.0
       prettier: 1.18.2
     transitivePeerDependencies:
@@ -87,27 +84,12 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@axiom-crypto/halo2-lib-js@0.2.14-rc.0:
-    resolution: {integrity: sha512-CkWp7VywU5JxXw8Hah/LLIm2oxYJzCKcPxNUo8j3t9wY4tkKVOwpPv2Kr5KuW2oeKOZvNlHmkemNcO6vfItS9Q==}
-    dependencies:
-      '@axiom-crypto/halo2-wasm': 0.2.11-rc.1
-      ethers: 6.10.0
-      prettier: 1.18.2
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
+  /@axiom-crypto/halo2-wasm@0.3.4:
+    resolution: {integrity: sha512-SUHXnydtx5rY0gQ2zWy0Br6L3iaAFo5RH/AMnOCSM4Nb3inqinBEnXQgEPZ45+EFmeOfRi1xOVUBdo6keZlacQ==}
     dev: false
 
-  /@axiom-crypto/halo2-wasm@0.2.11-rc.1:
-    resolution: {integrity: sha512-30yASHZXIIGILRJHvOPDZ43gATCgGzkl9wvbK+on1lC3lnMO5iF3aOsqIV8bPkTsh9OhpxsBA32FUkfZ+vZNyA==}
-    dev: false
-
-  /@axiom-crypto/halo2-wasm@0.2.7:
-    resolution: {integrity: sha512-pmgFCkCJUlFgh5NCLR59WpWIiBegNxBRAAlA2UxPMga1Pba02ynZgf6SW0tbQaezMiWUdTA9SfpeosovcNI6Yg==}
-    dev: false
-
-  /@axiom-crypto/tools@0.3.36-rc2.1:
-    resolution: {integrity: sha512-XZ/kLX2jvReSu5/Mmu0ZAx2kmNGBr9AemrRCgA4D3rgYWk9JZqQmoYq2NFozHsMCt5XCc7niLUXGbEHjEG2PAg==}
+  /@axiom-crypto/tools@2.0.0:
+    resolution: {integrity: sha512-zoNlRRTyS98xysKrui2g+/f+A6+LiSi7wNw1m+xbCcDkY5/yz52VkbpGt+DTfo5FboiqTaXAq5f5CidNg4Z0mQ==}
     dependencies:
       ethers: 6.10.0
     transitivePeerDependencies:
@@ -188,6 +170,20 @@ packages:
     peerDependencies:
       typescript: '>=5.0.4'
       zod: ^3 >=3.19.1
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+      zod:
+        optional: true
+    dependencies:
+      typescript: 5.3.3
+    dev: false
+
+  /abitype@1.0.0(typescript@5.3.3):
+    resolution: {integrity: sha512-NMeMah//6bJ56H5XRj8QCV4AwuW6hB6zqz2LnhhLdcWVQOsXki6/Pn3APeqxCma62nXIcmZWdu1DlHWS74umVQ==}
+    peerDependencies:
+      typescript: '>=5.0.4'
+      zod: ^3 >=3.22.0
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -491,6 +487,29 @@ packages:
       '@scure/bip32': 1.3.2
       '@scure/bip39': 1.2.1
       abitype: 0.9.8(typescript@5.3.3)
+      isows: 1.0.3(ws@8.13.0)
+      typescript: 5.3.3
+      ws: 8.13.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+      - zod
+    dev: false
+
+  /viem@2.4.0(typescript@5.3.3):
+    resolution: {integrity: sha512-CPP4ZBy0vKqJE1L2Dzrw/am3vD9p42H3nQwqNBk3o3R8jnM4vwncHjdu+V8tWdk3ZyM8now6Bdlqv76WPpZQhg==}
+    peerDependencies:
+      typescript: '>=5.0.4'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+    dependencies:
+      '@adraffy/ens-normalize': 1.10.0
+      '@noble/curves': 1.2.0
+      '@noble/hashes': 1.3.2
+      '@scure/bip32': 1.3.2
+      '@scure/bip39': 1.2.1
+      abitype: 1.0.0(typescript@5.3.3)
       isows: 1.0.3(ws@8.13.0)
       typescript: 5.3.3
       ws: 8.13.0
