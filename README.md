@@ -1,4 +1,4 @@
-## Axiom V2 Client
+## Axiom V2 Periphery
 
 This repo contains client smart contracts, interfaces, and testing utilities for applications integrating Axiom V2. To learn more about how to integrate Axiom into your application, see the [developer docs](https://docs.axiom.xyz). For the complete Axiom V2 smart contract code, see the smart contract repo [here](https://github.com/axiom-crypto/axiom-v2-contracts).
 
@@ -7,14 +7,14 @@ This repo contains client smart contracts, interfaces, and testing utilities for
 To use smart contracts or test utilities from this repo in your **external Foundry project**, run:
 
 ```bash
-forge install axiom-crypto/axiom-v2-client
+forge install axiom-crypto/axiom-v2-periphery
 ```
 
-Add `@axiom-v2-client/=lib/axiom-v2-client/src` in `remappings.txt`.
+Add `@axiom-crypto/v2-periphery/=lib/axiom-v2-periphery/src` in `remappings.txt`.
 
 ## Usage
 
-Once installed, you can use the contracts in this library by importing them. All interfaces are available under `@axiom-v2-client/interfaces`. For security, you should use the installed code **as-is**; we do not recommend copy-pasting from other sources or modifying yourself.
+Once installed, you can use the contracts in this library by importing them. All interfaces are available under `@axiom-crypto/v2-periphery/interfaces`. For security, you should use the installed code **as-is**; we do not recommend copy-pasting from other sources or modifying yourself.
 
 See our [quickstart repo](https://github.com/axiom-crypto/axiom-quickstart) for a minimal example using both `AxiomV2Client` and `AxiomTest`.
 
@@ -25,7 +25,7 @@ To integrate your application with Axiom, you should inherit from `AxiomV2Client
 ```solidity
 pragma solidity ^0.8.0;
 
-import { AxiomV2Client } from "@axiom-v2-client/client/AxiomV2Client.sol";
+import { AxiomV2Client } from "@axiom-crypto/v2-periphery/client/AxiomV2Client.sol";
 
 contract AverageBalance is AxiomV2Client {
     bytes32 immutable QUERY_SCHEMA;
@@ -65,15 +65,15 @@ contract AverageBalance is AxiomV2Client {
 
 #### Testing with `AxiomTest` Foundry tests
 
-To test your code, you can use `AxiomTest.sol` in place of `forge-std/Test.sol`. This extension to the standard Foundry test library provides Axiom-specific cheatcodes accessible to your Foundry tests. Using these cheatcodes requires the Axiom Client SDK, which is provided via the npm package `@axiom-crypto/client@0.2.2-rc2.2-alpha.1`; you can install this in your Foundry project using
+To test your code, you can use `AxiomTest.sol` in place of `forge-std/Test.sol`. This extension to the standard Foundry test library provides Axiom-specific cheatcodes accessible to your Foundry tests. Using these cheatcodes requires the Axiom Client SDK, which is provided via the npm package `@axiom-crypto/client@2.0.0`; you can install this in your Foundry project using
 
 ```bash
-npm install @axiom-crypto/client@0.2.2-rc2.2-alpha.1
-yarn add @axiom-crypto/client@0.2.2-rc2.2-alpha.1
-pnpm add @axiom-crypto/client@0.2.2-rc2.2-alpha.1
+npm install @axiom-crypto/client@2.0.0
+yarn add @axiom-crypto/client@2.0.0
+pnpm add @axiom-crypto/client@2.0.0
 ```
 
-Once you have written an Axiom circuit, you can test it against your client smart contract using the `AxiomVm` cheatcodes `sendQueryArgs`, `fulfillCallbackArgs`,  `prankCallback`, and `prankOffchainCallback`:
+Once you have written an Axiom circuit, you can test it against your client smart contract using the `AxiomVm` cheatcodes `sendQueryArgs`, `fulfillCallbackArgs`, `prankCallback`, and `prankOffchainCallback`:
 
 ```solidity
 // SPDX-License-Identifier: MIT
