@@ -1,4 +1,4 @@
-## Axiom V2 Client
+## Axiom V2 Periphery
 
 This repo contains client smart contracts, interfaces, and testing utilities for applications integrating Axiom V2. To learn more about how to integrate Axiom into your application, see the [developer docs](https://docs.axiom.xyz). For the complete Axiom V2 smart contract code, see the smart contract repo [here](https://github.com/axiom-crypto/axiom-v2-contracts).
 
