@@ -12,7 +12,7 @@ contract AverageBalanceTest is AxiomTest {
     function setUp() public {
         _createSelectForkAndSetupAxiom("sepolia", 5_103_100);
 
-        inputPath = "test/circuit/input.json";
+        inputPath = "test/circuit/data/inputs.json";
         querySchema = axiomVm.compile("test/circuit/average.circuit.ts", inputPath);
         averageBalance = new AverageBalance(axiomV2QueryAddress, uint64(block.chainid), querySchema);
     }
