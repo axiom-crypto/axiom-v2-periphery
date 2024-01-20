@@ -65,12 +65,12 @@ contract AverageBalance is AxiomV2Client {
 
 #### Testing with `AxiomTest` Foundry tests
 
-To test your code, you can use `AxiomTest.sol` in place of `forge-std/Test.sol`. This extension to the standard Foundry test library provides Axiom-specific cheatcodes accessible to your Foundry tests. Using these cheatcodes requires the Axiom Client SDK, which is provided via the npm package `@axiom-crypto/client@2.0.0`; you can install this in your Foundry project using
+To test your code, you can use `AxiomTest.sol` in place of `forge-std/Test.sol`. This extension to the standard Foundry test library provides Axiom-specific cheatcodes accessible to your Foundry tests. Using these cheatcodes requires the Axiom Client SDK, which is provided via the npm package `@axiom-crypto/client`; you can install this in your Foundry project using
 
 ```bash
-npm install @axiom-crypto/client@2.0.0
-yarn add @axiom-crypto/client@2.0.0
-pnpm add @axiom-crypto/client@2.0.0
+npm install @axiom-crypto/client
+yarn add @axiom-crypto/client
+pnpm add @axiom-crypto/client
 ```
 
 Once you have written an Axiom circuit, you can test it against your client smart contract using the `AxiomVm` cheatcodes `sendQueryArgs`, `fulfillCallbackArgs`, `prankCallback`, and `prankOffchainCallback`:
