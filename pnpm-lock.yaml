@@ -5,14 +5,29 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
+  '@axiom-crypto/circuit':
+    specifier: ^2.0.3
+    version: 2.0.3(typescript@5.3.3)
   '@axiom-crypto/client':
     specifier: 2.0.3
     version: 2.0.3(typescript@5.3.3)
+  '@axiom-crypto/core':
+    specifier: ^2.3.4
+    version: 2.3.4
+  commander:
+    specifier: ^11.1.0
+    version: 11.1.0
   dotenv:
     specifier: ^16.3.1
     version: 16.3.1
+  viem:
+    specifier: ^2.5.0
+    version: 2.5.0(typescript@5.3.3)
 
 devDependencies:
+  '@types/node':
+    specifier: 18.15.13
+    version: 18.15.13
   typescript:
     specifier: ^5.3.2
     version: 5.3.3
@@ -50,7 +65,7 @@ packages:
       chalk: 4.1.2
       commander: 11.1.0
       prompts: 2.4.2
-      viem: 2.4.0(typescript@5.3.3)
+      viem: 2.5.0(typescript@5.3.3)
     transitivePeerDependencies:
       - bufferutil
       - debug
@@ -163,7 +178,6 @@ packages:
 
   /@types/node@18.15.13:
     resolution: {integrity: sha512-N+0kuo9KgrUQ1Sn/ifDXsvg0TTleP7rIy4zOBGECxAljqvqfqpTfzx0Q1NUedOixRMBfe2Whhb056a42cWs26Q==}
-    dev: false
 
   /abitype@0.9.8(typescript@5.3.3):
     resolution: {integrity: sha512-puLifILdm+8sjyss4S+fsUN09obiT1g2YW6CtcQF+QDzxR0euzgEB29MZujC6zMk2a6SVmtttq1fc6+YFA7WYQ==}
@@ -496,8 +510,8 @@ packages:
       - zod
     dev: false
 
-  /viem@2.4.0(typescript@5.3.3):
-    resolution: {integrity: sha512-CPP4ZBy0vKqJE1L2Dzrw/am3vD9p42H3nQwqNBk3o3R8jnM4vwncHjdu+V8tWdk3ZyM8now6Bdlqv76WPpZQhg==}
+  /viem@2.5.0(typescript@5.3.3):
+    resolution: {integrity: sha512-ytHXIWtlgPs4mcsGxXjJrQ25v+N4dE2hBzgCU8CVv4iXNh3PRFRgyYa7igZlmxiMVzkfSHHADOtivS980JhilA==}
     peerDependencies:
       typescript: '>=5.0.4'
     peerDependenciesMeta:
