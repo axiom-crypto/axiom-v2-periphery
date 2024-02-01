@@ -13,6 +13,7 @@ contract AxiomVm is Test {
     string constant COMPILED_PATH = ".axiom/compiled.json";
     string constant QUERY_PATH = ".axiom/query.json";
     string constant OUTPUT_PATH = ".axiom/output.json";
+    string constant CIRCUIT_HASH_PATH = ".axiom/circuitHash.json";
 
     /// @dev Used to store inputs and outputs from FFI
     string public compiledString;
@@ -84,25 +85,39 @@ contract AxiomVm is Test {
         string memory _circuitPath,
         string memory inputPath
     ) public returns (bytes32 querySchema) {
-        circuitPath = _circuitPath;
+        circuitPath = _circuitPath;       
         compiled = true;
         _validateAxiomSetup();
-        string[] memory cli = new string[](14);
-        cli[0] = "npx";
-        cli[1] = "axiom";
-        cli[2] = "circuit";
-        cli[3] = "compile";
-        cli[4] = _circuitPath;
-        cli[5] = "--provider";
-        cli[6] = vm.rpcUrl(urlOrAlias);
-        cli[7] = "--inputs";
-        cli[8] = inputPath;
-        cli[9] = "--outputs";
-        cli[10] = COMPILED_PATH;
-        cli[11] = "--function";
-        cli[12] = "circuit";
-        if (isMock) cli[13] = "--mock";
-        vm.ffi(cli);
+        bytes32 circuitHash = bytes32(0);
+        // The following throws: [FAIL. Reason: Setup failed: Invalid data] but I'm not sure why
+        // if(vm.isFile(CIRCUIT_HASH_PATH)) {
+            string memory circuitHashFile = vm.readFile(CIRCUIT_HASH_PATH);
+            circuitHash = bytes32(vm.parseJson(circuitHashFile, ".hash"));
+        // }
+
+        bytes32 _circuitHash = keccak256(abi.encodePacked(vm.readFile(_circuitPath), isMock));
+        
+        if(_circuitHash != circuitHash) {
+            string[] memory cli = new string[](14);
+            cli[0] = "npx";
+            cli[1] = "axiom";
+            cli[2] = "circuit";
+            cli[3] = "compile";
+            cli[4] = _circuitPath;
+            cli[5] = "--provider";
+            cli[6] = vm.rpcUrl(urlOrAlias);
+            cli[7] = "--inputs";
+            cli[8] = inputPath;
+            cli[9] = "--outputs";
+            cli[10] = COMPILED_PATH;
+            cli[11] = "--function";
+            cli[12] = "circuit";
+            if (isMock) cli[13] = "--mock";
+            vm.ffi(cli); 
+            // Write hash of compiled circuit to avoid re-compile
+            string memory jsonHash = vm.serializeBytes32("circuitHash", "hash", _circuitHash);
+            vm.writeJson(jsonHash, CIRCUIT_HASH_PATH);
+        }
 
         string memory artifact = vm.readFile(COMPILED_PATH);
         compiledString = artifact;

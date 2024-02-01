@@ -4,7 +4,7 @@ out = "out"
 solc = "0.8.19"
 libs = ["node_modules", "lib"]
 ffi = true
-fs_permissions = [{ access = "read-write", path = ".axiom" }]
+fs_permissions = [{ access = "read-write", path = ".axiom" }, { access = "read", path = "test/circuit/average.circuit.ts" }]
 
 [rpc_endpoints]
 sepolia = "${PROVIDER_URI_SEPOLIA}"
