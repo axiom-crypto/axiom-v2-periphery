@@ -1,6 +1,6 @@
 ## Axiom V2 Periphery
 
-This repo contains client smart contracts, interfaces, and testing utilities for applications integrating Axiom V2. To learn more about how to integrate Axiom into your application, see the [developer docs](https://docs.axiom.xyz). For the complete Axiom V2 smart contract code, see the smart contract repo [here](https://github.com/axiom-crypto/axiom-v2-contracts).
+This repo contains client smart contracts and interfaces for applications integrating Axiom V2. To learn more about how to integrate Axiom into your application, see the [developer docs](https://docs.axiom.xyz). For the complete Axiom V2 smart contract code, see the smart contract repo [here](https://github.com/axiom-crypto/axiom-v2-contracts).
 
 ## Installation
 
@@ -16,7 +16,7 @@ Add `@axiom-crypto/v2-periphery/=lib/axiom-v2-periphery/src` in `remappings.txt`
 
 Once installed, you can use the contracts in this library by importing them. All interfaces are available under `@axiom-crypto/v2-periphery/interfaces`. For security, you should use the installed code **as-is**; we do not recommend copy-pasting from other sources or modifying yourself.
 
-See our [quickstart repo](https://github.com/axiom-crypto/axiom-quickstart) for a minimal example using both `AxiomV2Client` and `AxiomTest`.
+See our [quickstart repo](https://github.com/axiom-crypto/axiom-quickstart) for a minimal example.
 
 #### Implementing a client for Axiom V2
 
@@ -63,114 +63,14 @@ contract AverageBalance is AxiomV2Client {
 }
 ```
 
-#### Testing with `AxiomTest` Foundry tests
+#### Testing with `axiom-std` Foundry tests
 
-To test your code, you can use `AxiomTest.sol` in place of `forge-std/Test.sol`. This extension to the standard Foundry test library provides Axiom-specific cheatcodes accessible to your Foundry tests. Using these cheatcodes requires the Axiom Client SDK, which is provided via the npm package `@axiom-crypto/client`; you can install this in your Foundry project using
-
-```bash
-npm install @axiom-crypto/client
-yarn add @axiom-crypto/client
-pnpm add @axiom-crypto/client
-```
-
-Once you have written an Axiom circuit, you can test it against your client smart contract using the `AxiomVm` cheatcodes `sendQueryArgs`, `fulfillCallbackArgs`, `prankCallback`, and `prankOffchainCallback`:
-
-```solidity
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
-
-import { AxiomTest, AxiomVm } from "../src/test/AxiomTest.sol";
-import { IAxiomV2Query } from "../src/interfaces/query/IAxiomV2Query.sol";
-
-import { AverageBalance } from "./example/AverageBalance.sol";
-
-contract AverageBalanceTest is AxiomTest {
-    AverageBalance public averageBalance;
-
-    function setUp() public {
-        _createSelectForkAndSetupAxiom("sepolia", 5_057_320);
-
-        inputPath = "test/circuit/input.json";
-        querySchema = axiomVm.compile("test/circuit/average.circuit.ts", inputPath);
-        averageBalance = new AverageBalance(axiomV2QueryAddress, uint64(block.chainid), querySchema);
-    }
-
-    function test_axiomSendQuery() public {
-        axiomVm.getArgsAndSendQuery(
-            inputPath,
-            address(averageBalance),
-            callbackExtraData,
-            feeData,
-            msg.sender
-        );
-    }
-
-    function test_axiomSendQueryWithArgs() public {
-        AxiomVm.AxiomSendQueryArgs memory args = axiomVm.sendQueryArgs(
-            inputPath, address(averageBalance), callbackExtraData, feeData
-        );
-        axiomV2Query.sendQuery{ value: args.value }(
-            args.sourceChainId,
-            args.dataQueryHash,
-            args.computeQuery,
-            args.callback,
-            args.feeData,
-            args.userSalt,
-            args.refundee,
-            args.dataQuery
-        );
-    }
-
-    function test_axiomCallback() public {
-        axiomVm.prankCallback(
-            inputPath,
-            address(averageBalance),
-            callbackExtraData,
-            feeData,
-            msg.sender
-        );
-    }
-
-    function test_AxiomCallbackWithArgs() public {
-        AxiomVm.AxiomFulfillCallbackArgs memory args = axiomVm.fulfillCallbackArgs(
-            inputPath,
-            address(averageBalance),
-            callbackExtraData,
-            feeData,
-            msg.sender
-        );
-        axiomVm.prankCallback(args);
-    }
-
-    function test_axiomOffchainCallback() public {
-        axiomVm.prankOffchainCallback(
-            inputPath,
-            address(averageBalance),
-            callbackExtraData,
-            feeData,
-            msg.sender
-        );
-    }
-
-    function test_AxiomOffchainCallbackWithArgs() public {
-        AxiomVm.AxiomFulfillCallbackArgs memory args = axiomVm.fulfillCallbackArgs(
-            inputPath,
-            address(averageBalance),
-            callbackExtraData,
-            feeData,
-            msg.sender
-        );
-        axiomVm.prankOffchainCallback(args);
-    }
-}
-
-```
+To test your code, you can use `axiom-std`, an extension to the standard Foundry test library that provides Axiom-specific cheatcodes accessible to your Foundry tests. See our [axiom-std repo](https://github.com/axiom-crypto/axiom-std) for further documentation and our [quickstart repo](https://github.com/axiom-crypto/axiom-quickstart) for a minimal example using both `AxiomV2Client` and `axiom-std`.
 
 ## Running this repo for development
 
-This repo contains both Foundry and Javascript packages. To install, run:
+This repo contains both Foundry packages. To install, run:
 
 ```bash
 forge install
-pnpm install     # or `npm install` or `yarn install`
 ```
